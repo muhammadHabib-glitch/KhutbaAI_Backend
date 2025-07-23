@@ -1,8 +1,14 @@
 from sqlalchemy.orm import declarative_base, sessionmaker
 from sqlalchemy import create_engine
 
+
 import os
 from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
+
+
 
 # Load environment variables from .env file
 load_dotenv()
@@ -20,7 +26,10 @@ Session = sessionmaker(bind=engine)
 
 # Get Hadith API key
 HADITH_API_KEY = os.getenv("HADITH_API_KEY")
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+# Hugging face api
+HF_API_TOKEN = os.getenv("HF_API_TOKEN")
+
+
 
 
 # -------------------------------------------------------------------
@@ -45,3 +54,11 @@ GOOGLE_DISCOVERY_URL = "https://accounts.google.com/.well-known/openid-configura
 
 # A random 32‑byte secret; in production, set this via an environment variable
 SECRET_KEY = os.environ.get("FLASK_SECRET_KEY", os.urandom(32))
+
+
+
+# ---------- Upload Config ----------
+# Directory where uploaded profile images will be stored
+UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), 'uploads')
+# Base URL used to build public image URLs
+BASE_URL = os.getenv('BASE_URL', 'http://192.168.18.97:5000')
