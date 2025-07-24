@@ -1915,7 +1915,9 @@ def set_intention():
                 UserId=user_id,
                 WeekStart=week_start,
                 Intention=f"{goal} reflections",
-                Level=max_goal
+                Level=max_goal,
+                CreatedAt = datetime.utcnow(),  # 👈 Add this
+                UpdatedAt = datetime.utcnow()
             )
             session.add(intention)
 
@@ -1941,6 +1943,35 @@ def auto_fill_last_intention(user):
         session.commit()
 
 
+@app.route('/get-intention', methods=['GET'])
+def get_intention():
+    user_id = request.args.get('user_id')
+
+    if not user_id:
+        return jsonify({'error': 'Missing user_id'}), 400
+
+    session = Session()
+    try:
+        intention = (
+            session.query(Intention)
+            .filter_by(UserId=user_id)
+            .order_by(Intention.WeekStart.desc())
+            .first()
+        )
+
+        if not intention:
+            return jsonify({'message': 'No intention found'}), 404
+
+        return jsonify({
+            'goal': int(intention.Intention.split()[0]),
+            'week_start': intention.WeekStart.strftime('%Y-%m-%d'),
+            'last_updated': intention.UpdatedAt.strftime('%Y-%m-%d %H:%M:%S') if intention.UpdatedAt else ''
+
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        session.close()
 
 
 

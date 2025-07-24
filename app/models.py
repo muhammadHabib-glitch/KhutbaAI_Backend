@@ -2,6 +2,7 @@ from sqlalchemy import Column, String, UnicodeText, Unicode,DateTime, Text, Fore
 from sqlalchemy.dialects.mssql import UNIQUEIDENTIFIER
 from datetime import datetime
 from sqlalchemy import Column, DateTime, ForeignKey, Integer
+from sqlalchemy.sql import func
 
 import uuid
 
@@ -55,9 +56,11 @@ class Intention(Base):
 
     Id = Column(UNIQUEIDENTIFIER, primary_key=True, default=uuid.uuid4)
     UserId = Column(UNIQUEIDENTIFIER, ForeignKey('Users.Id'), nullable=False)
-    WeekStart = Column(Date, nullable=False)
+    WeekStart   = Column(Date, nullable=False)
     Intention = Column(String(500))
     Level = Column(Integer, nullable=False)
+    CreatedAt = Column(DateTime(timezone=True), server_default=func.now())
+    UpdatedAt = Column(DateTime(timezone=True), onupdate=func.now())
 
 
 class PendingUser(Base):

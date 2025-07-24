@@ -29,3 +29,55 @@ def reset_weekly_goals():
         print(f"[{datetime.utcnow()}] ❌ Failed to reset goals: {e}")
     finally:
         session.close()
+
+
+def carry_forward_unset_intentions():
+    session = Session()
+    try:
+        from app.models import Intention  # 🔁 Ensure correct import
+        users = session.query(User).all()
+        current_week = datetime.utcnow().date()  # Or use get_week_start() if defined
+
+        for user in users:
+            # Skip if already set this week
+            already_set = session.query(Intention).filter_by(UserId=user.Id, WeekStart=current_week).first()
+            if already_set:
+                continue
+
+            # Get the most recent past intention
+            last_intent = session.query(Intention) \
+                .filter(Intention.UserId == user.Id, Intention.WeekStart < current_week) \
+                .order_by(Intention.WeekStart.desc()).first()
+
+            if last_intent:
+                new_intention = Intention(
+                    UserId=user.Id,
+                    WeekStart=current_week,
+                    Intention=last_intent.Intention,
+                    Level=last_intent.Level,
+                    CreatedAt=datetime.utcnow(),         # 👈
+                     UpdatedAt=datetime.utcnow()
+                )
+                session.add(new_intention)
+                user.CurrentWeekGoal = int(last_intent.Intention.split()[0])
+                user.LastGoalSet = datetime.utcnow()
+
+            else:
+                # 🔁 Fallback for users with no past intention — set to 1 reflection
+                new_intention = Intention(
+                    UserId=user.Id,
+                    WeekStart=current_week,
+                    Intention="1 reflections",
+                    Level=1
+                )
+                session.add(new_intention)
+                user.CurrentWeekGoal = 1
+                user.LastGoalSet = datetime.utcnow()
+
+        session.commit()
+        print(f"[{datetime.utcnow()}] ✅ Carried forward unset intentions (including default for new users).")
+    except Exception as e:
+        session.rollback()
+        print(f"[{datetime.utcnow()}] ❌ Failed to carry forward intentions: {e}")
+    finally:
+        session.close()
